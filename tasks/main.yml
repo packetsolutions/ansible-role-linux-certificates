@@ -1,0 +1,41 @@
+---
+- name: 'set os variables'
+  include_vars: '{{ item }}'
+  with_first_found:
+   - '{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml'
+   - '{{ ansible_distribution | lower }}.yml'
+   - '{{ ansible_os_family | lower }}.yml'
+
+- name: 'debian | install dependencies'
+  include: 'ca-certificates-debian-install.yml'
+  when: ansible_os_family == 'Debian'
+
+- name: 'create directory'
+  file:
+   path: "{{ pki_certs_base_dir }}"
+   state: directory
+   owner: "{{ pki_certs_base_dir_owner | default('root') }}"
+   group: "{{ pki_certs_base_dir_group | default('root') }}"
+   mode: "{{ pki_certs_base_dir_permissions | default('0755') }}"
+  become: yes
+
+- name: 'remove certificates'
+  file:
+    path: '{{ pki_certs_base_dir }}/{{ item.dest }}'
+    state: 'absent'
+  with_items: "{{ pki_certs_trusted }}"
+  when: item.state == 'absent'
+  become: yes
+  notify: 'update ca-certificates'
+
+- name: 'install certificates'
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ pki_certs_base_dir }}/{{ item.dest }}'
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0644') }}"
+  with_items: "{{ pki_certs_trusted }}"
+  when: item.state == 'present'
+  become: yes
+  notify: 'update ca-certificates'

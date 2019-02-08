@@ -1,0 +1,3 @@
+---
+pki_certs_base_dir: '/usr/local/share/ca-certificates'
+pki_certs_trusted: []

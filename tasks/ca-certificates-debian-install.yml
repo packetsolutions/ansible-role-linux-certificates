@@ -1,0 +1,6 @@
+---
+- name: 'debian | install ca-certificates'
+  apt:
+    name: 'ca-certificates'
+    state: 'present'
+  become: yes
